@@ -47,7 +47,7 @@ ros2 run inverse_kinematics_pkg goal_pose_node
 #### 1. Clone the repository and build the image
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/comp3766-final-project.git
+git clone https://github.com/b1inu/comp3766-final-project.git
 cd comp3766-final-project
 docker build -t ik_project .
 ```
