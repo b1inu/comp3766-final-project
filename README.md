@@ -38,7 +38,7 @@ colcon build
 ros2 run inverse_kinematics_pkg numerical_inverse_kinematics
 # Analytical Inverse Kinematics
 ros2 run inverse_kinematics_pkg analytical_inverse_kinematics
-# Goal Pose Publisher for Analytical Inverse Kinematics
+# Goal Pose Publisher for Numerical and Analytical Inverse Kinematics
 ros2 run inverse_kinematics_pkg goal_pose_node
 ```
 
