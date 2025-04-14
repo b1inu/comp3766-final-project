@@ -18,14 +18,15 @@ class NumericalIKNode(Node):
 
         # Screw axes
         self.Slist = np.array([
-            [0, 0, 1,     0,       0,     0],            # joint1 rotates about z at origin
-            [0, 1, 0, -0.67,      0,     0],             # joint2 rotates about y, offset from joint1
-            [0, 1, 0, -1.102,     0,     0],             # joint3 rotates about y, offset more
-            [0, 0, 1,     0, -1.514,     0],             # joint4 rotates about z, far out
-            [0, 1, 0, -1.514,     0,     0],             # joint5 rotates about y
-            [1, 0, 0,     0, -1.514,     0]              # joint6 rotates about x
+            [0, 0, 1,     0,       0,     0],
+            [0, 1, 0, -0.67,      0,     0],
+            [0, 1, 0, -1.102,     0,     0],
+            [0, 0, 1,     0, -1.514,     0],
+            [0, 1, 0, -1.514,     0,     0],
+            [1, 0, 0,     0, -1.514,     0]
         ]).T
 
+        # Home configuration
         self.M = np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0],
@@ -33,19 +34,23 @@ class NumericalIKNode(Node):
             [0, 0, 0, 1]
         ])
 
+        # Initial guess (using our analytical IK results)
         self.theta_guess = np.array([2.62456958, -0.03878836, 1.34310751, 3.14159265, -0., 3.14159265])
 
+    # Wrap angles to be within [-pi, pi]
     def wrap_angles(self, thetas):
         return (thetas + np.pi) % (2 * np.pi) - np.pi
 
+    # Callback for receiving the goal pose
     def pose_callback(self, msg):
         position = np.array([[msg.position.x], [msg.position.y], [msg.position.z]])
         q = [msg.orientation.w, msg.orientation.x, msg.orientation.y, msg.orientation.z]
         rotation_matrix = tq.quat2mat(q)
 
-        T_sd = np.vstack((np.hstack((rotation_matrix, position)), [0, 0, 0, 1]))
+        T_sd = np.vstack((np.hstack((rotation_matrix, position)), [0, 0, 0, 1])) # build the transformation matrix
         self.solve_ik(T_sd)
 
+    # Solve the inverse kinematics using modern robotics
     def solve_ik(self, T_sd):
         eomg = 1e-3
         ev = 1e-3
@@ -69,9 +74,12 @@ class NumericalIKNode(Node):
             
             T_actual = mr.FKinSpace(self.M, self.Slist, theta)
 
-            self.get_logger().info("=== Forward Kinematics Debug ===")
-            self.get_logger().info(f"T_actual:\n{np.round(T_actual, 3)}")
-            self.get_logger().info(f"T_goal:\n{np.round(self.T_sd, 3)}")
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Uncomment for debugging
+            # self.get_logger().info("=== Forward Kinematics Debug ===")
+            # self.get_logger().info(f"T_actual:\n{np.round(T_actual, 3)}")
+            # self.get_logger().info(f"T_goal:\n{np.round(self.T_sd, 3)}")
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             diff = np.abs(T_actual - self.T_sd)
             self.get_logger().info(f"Difference:\n{np.round(diff, 4)}")
@@ -81,6 +89,7 @@ class NumericalIKNode(Node):
         self.get_logger().info(f"Final Joint Angles: {theta}")
         self.get_logger().info(f"Time taken: {end - start:.6f}s")
 
+    # Publish the joint angles
     def publish_joint_states(self, theta):
         wrapped = self.wrap_angles(theta)
         joint_msg = JointState()
