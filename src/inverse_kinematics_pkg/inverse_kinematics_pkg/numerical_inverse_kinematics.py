@@ -16,24 +16,24 @@ class NumericalIKNode(Node):
         self.pose_sub = self.create_subscription(Pose, '/goal_pose', self.pose_callback, 10)
         self.get_logger().info("Numerical IK Node ready and waiting for /goal_pose...")
 
-        # Screw axes in space frame
+        # Screw axes
         self.Slist = np.array([
-            [0, 0, 1, 0, 0, 0],
-            [0, 1, 0, -0.3, 0, 0],
-            [0, 1, 0, -0.6, 0, 0],
-            [0, 0, -1, 0, 0.6, 0],
-            [0, 1, 0, -0.9, 0, 0],
-            [1, 0, 0, 0, -0.9, 0]
+            [0, 0, 1,     0,       0,     0],            # joint1 rotates about z at origin
+            [0, 1, 0, -0.67,      0,     0],             # joint2 rotates about y, offset from joint1
+            [0, 1, 0, -1.102,     0,     0],             # joint3 rotates about y, offset more
+            [0, 0, 1,     0, -1.514,     0],             # joint4 rotates about z, far out
+            [0, 1, 0, -1.514,     0,     0],             # joint5 rotates about y
+            [1, 0, 0,     0, -1.514,     0]              # joint6 rotates about x
         ]).T
 
         self.M = np.array([
-            [1, 0, 0, 0.9],
+            [1, 0, 0, 0],
             [0, 1, 0, 0],
-            [0, 0, 1, 1.2],
+            [0, 0, 1, 1.514],
             [0, 0, 0, 1]
         ])
 
-        self.theta_guess = np.array([0.1] * 6)
+        self.theta_guess = np.array([2.62456958, -0.03878836, 1.34310751, 3.14159265, -0., 3.14159265])
 
     def wrap_angles(self, thetas):
         return (thetas + np.pi) % (2 * np.pi) - np.pi
@@ -66,6 +66,15 @@ class NumericalIKNode(Node):
             J = mr.JacobianSpace(self.Slist, theta)
             V_s = mr.Adjoint(T_current) @ V_b
             theta += np.dot(np.linalg.pinv(J), V_s)
+            
+            T_actual = mr.FKinSpace(self.M, self.Slist, theta)
+
+            self.get_logger().info("=== Forward Kinematics Debug ===")
+            self.get_logger().info(f"T_actual:\n{np.round(T_actual, 3)}")
+            self.get_logger().info(f"T_goal:\n{np.round(self.T_sd, 3)}")
+            
+            diff = np.abs(T_actual - self.T_sd)
+            self.get_logger().info(f"Difference:\n{np.round(diff, 4)}")
 
         end = time.time()
         self.get_logger().warn(f"[FAILURE] IK did not converge in {max_iterations} iterations.")
@@ -80,7 +89,6 @@ class NumericalIKNode(Node):
         joint_msg.position = wrapped.tolist()
         self.joint_pub.publish(joint_msg)
         self.get_logger().info(f"Published Joint Angles: {wrapped}")
-
 
 def main(args=None):
     rclpy.init(args=args)

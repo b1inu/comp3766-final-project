@@ -6,7 +6,7 @@ import numpy as np
 from geometry_msgs.msg import Pose
 from transforms3d.quaternions import mat2quat
 
-GOAL_POSITION = [0.25, 0.5, 0.0]
+GOAL_POSITION = [0.4, 0.4, 0.4]
 GOAL_ROTATION_MATRIX = np.array([
     [-1.0, 0.0, 0.0],
     [0.0, -1.0, 0.0],
