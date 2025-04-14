@@ -47,8 +47,8 @@ class NumericalIKNode(Node):
         q = [msg.orientation.w, msg.orientation.x, msg.orientation.y, msg.orientation.z]
         rotation_matrix = tq.quat2mat(q)
 
-        T_sd = np.vstack((np.hstack((rotation_matrix, position)), [0, 0, 0, 1])) # build the transformation matrix
-        self.solve_ik(T_sd)
+        self.T_sd = np.vstack((np.hstack((rotation_matrix, position)), [0, 0, 0, 1])) # build the transformation matrix
+        self.solve_ik(self.T_sd)
 
     # Solve the inverse kinematics using modern robotics
     def solve_ik(self, T_sd):
@@ -79,10 +79,10 @@ class NumericalIKNode(Node):
             # self.get_logger().info("=== Forward Kinematics Debug ===")
             # self.get_logger().info(f"T_actual:\n{np.round(T_actual, 3)}")
             # self.get_logger().info(f"T_goal:\n{np.round(self.T_sd, 3)}")
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
-            diff = np.abs(T_actual - self.T_sd)
-            self.get_logger().info(f"Difference:\n{np.round(diff, 4)}")
+            # diff = np.abs(T_actual - self.T_sd)
+            # self.get_logger().info(f"Difference:\n{np.round(diff, 4)}")
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         end = time.time()
         self.get_logger().warn(f"[FAILURE] IK did not converge in {max_iterations} iterations.")
